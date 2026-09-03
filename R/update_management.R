@@ -22,10 +22,15 @@ update_management <- function(swat_inputs, hru_id, mgt_def) {
   mgt_add <- filter(mgt_def$management.sch, name %in% lum_add$mgt)
   ini_add <- filter(mgt_def$plant.ini, pcom_name %in% lum_add$plnt_com)
 
-  swat_inputs$landuse.lum <- bind_rows(swat_inputs$landuse.lum, lum_add)
-  swat_inputs$management.sch <- bind_rows(swat_inputs$management.sch,
+  # A scenario may reuse a generated schedule label. Replace the complete
+  # definition instead of appending a second block with the same name.
+  swat_inputs$landuse.lum <- bind_rows(
+    filter(swat_inputs$landuse.lum, !name %in% lum_add$name), lum_add)
+  swat_inputs$management.sch <- bind_rows(
+    filter(swat_inputs$management.sch, !name %in% mgt_add$name),
                                           mgt_add)
-  swat_inputs$plant.ini <- bind_rows(swat_inputs$plant.ini, ini_add)
+  swat_inputs$plant.ini <- bind_rows(
+    filter(swat_inputs$plant.ini, !pcom_name %in% ini_add$pcom_name), ini_add)
 
   # Set the input files which are adjusted by management related changes
   # so that they will be written when writing output files.

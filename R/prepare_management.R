@@ -99,8 +99,21 @@ prepare_management_scenario_inputs <- function(project_path,
   # Check if required files for the types farmr or txt are available in the
   # project path
   if(file_type == 'farmr') {
-    mgt_files <- paste0(rep(c(status_quo, scen_names), each = 2),
-                        c('.farm', '.mgts'))
+    farm_names <- c(status_quo, scen_names)
+    farm_files <- paste0(farm_names, '.farm')
+    farm_missing <- !farm_files %in% proj_files
+    if (any(farm_missing)) {
+      stop("'SWATfarmR' input files were expected for the management scenario preparation.\n",
+           "The following required files were not found:\n",
+           paste(farm_files[farm_missing], collapse = ', '))
+    }
+    farm_projects <- lapply(file.path(project_path, farm_files), readRDS)
+    database_project <- vapply(farm_projects, function(x) {
+      type <- x$.data$meta$project_type
+      is.null(type) || identical(type, 'database')
+    }, logical(1))
+    mgts_files <- if (any(database_project)) paste0(farm_names[database_project], '.mgts') else character()
+    mgt_files <- c(farm_files, mgts_files)
     mgt_missing <- !mgt_files %in% proj_files
     if(any(mgt_missing)) {
       stop("'SWATfarmR' input files were expected for the management scenario preparation.\n",

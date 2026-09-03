@@ -13,3 +13,8 @@ test_that('table writer retains fields beyond a legacy format vector', {
   write(tibble::tibble(id=1L, name='item', new_field='future'), file, c('%8d','%-16s'))
   expect_match(readLines(file)[3], 'future', fixed = TRUE)
 })
+
+test_that('environment FarmR projects do not require database sidecars', {
+  expect_match(paste(deparse(getFromNamespace('prepare_management_scenario_inputs', 'SWATmeasR')), collapse = '\n'),
+               'database_project')
+})
