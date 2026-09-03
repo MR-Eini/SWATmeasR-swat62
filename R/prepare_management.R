@@ -726,21 +726,14 @@ write_op_plus <- function(path, proj_name, mgt_raw, assigned_hrus, schedules,
   cat("  - Updating 'time.sim'\n")
   time_sim <- mgt_raw$time_sim
   time_sim[1] <- add_edit_timestamp(time_sim[1])
-  time_sim[3] <- map2_chr(c(0, start_year, 0, end_year, 0),
-                          c('%9s','%10s', '%9s',  '%9s',  '%9s'),
-                          ~ sprintf(.y, .x)) %>%
-    paste(., collapse = ' ')
+  time_sim <- SWATreadR::swat_control_set(time_sim,
+    c(day_start = 0, yrc_start = start_year, day_end = 0, yrc_end = end_year))
   write_lines(time_sim, paste0(path, '/time.sim'))
 
   cat("  - Updating 'file.cio'\n")
   file_cio <- mgt_raw$file_cio
   file_cio[1] <- add_edit_timestamp(file_cio[1])
-  lum_line <- file_cio[21] %>%
-    str_trim(.) %>%
-    str_split(., '[:space:]+', simplify = TRUE)
-  lum_line[3] <- 'management.sch'
-  file_cio[21] <- paste(sprintf(rep('%-17s', length(lum_line)), lum_line),
-                        collapse = ' ')
+  file_cio <- SWATreadR::swat_cio_set(file_cio, 'lum', 2L, 'management.sch')
   write_lines(file_cio, paste0(path, '/file.cio'))
 
   interval(t0,now()) %>%
@@ -1111,18 +1104,9 @@ add_edit_timestamp <- function(str) {
 }
 
 hru_to_string <- function(hru_line) {
-  paste(sprintf('%8s', hru_line[1]),
-        '',
-        sprintf('%-16s', hru_line[2]),
-        sprintf('%17s', hru_line[3]),
-        sprintf('%17s', hru_line[4]),
-        sprintf('%17s', hru_line[5]),
-        sprintf('%17s', hru_line[6]),
-        sprintf('%17s', hru_line[7]),
-        sprintf('%17s', hru_line[8]),
-        sprintf('%17s', hru_line[9]),
-        sprintf('%17s', hru_line[10])
-  )
+  if (length(hru_line) < 2L) stop('HRU rows require an id and name.')
+  fmt <- c('%8s', '%-16s', rep('%17s', length(hru_line) - 2L))
+  paste(sprintf(fmt, hru_line), collapse = ' ')
 }
 
 #' Write the mgt files in the TxtInOut folder
@@ -1142,7 +1126,7 @@ hru_to_string <- function(hru_line) {
 #' @keywords internal
 #'
 lum_to_string <- function(lum_line) {
-  map2_chr(lum_line,c('%-20s', rep('%17s',13)),   ~ sprintf(.y, .x)) %>%
+  map2_chr(lum_line,c('%-20s', rep('%17s',length(lum_line) - 1L)),   ~ sprintf(.y, .x)) %>%
     paste(., collapse = ' ')
 }
 

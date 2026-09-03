@@ -108,14 +108,13 @@ read_swat_inputs <- function(project_path) {
 #' @keywords internal
 #'
 read_tbl <- function(file_path, col_names = NULL, col_types = NULL, n_skip = 1) {
+  type_names <- col_names
   if (file.exists(file_path)) {
     tbl <- fread(file_path, skip = n_skip + 1, header = FALSE)
-    if (is.null(col_names)) {
-      col_names <- fread(file_path, skip = n_skip, nrows = 1, header = F) %>%
-        unlist(.) %>%
-        unname(.) %>%
-        add_suffix_to_duplicate(.)
-    }
+    col_names <- fread(file_path, skip = n_skip, nrows = 1, header = F) %>%
+      unlist(.) %>%
+      unname(.) %>%
+      add_suffix_to_duplicate(.)
     if ('description' %in% col_names & ncol(tbl) == length(col_names) - 1) {
       tbl <- add_column(tbl, description = '')
     } else if (ncol(tbl) > length(col_names)) {
@@ -149,7 +148,11 @@ read_tbl <- function(file_path, col_names = NULL, col_types = NULL, n_skip = 1) 
   if(!is.null(col_types)) {
     col_types <- unlist(strsplit(col_types, '')) %>%
       recode(., c = 'character', d = 'numeric', i = 'integer')
-    tbl <- map2_df(tbl, col_types, ~ as(.x, .y))
+    # Optional schemas provide defaults for absent files and known field types.
+    # New fields read from an existing header keep their inferred type.
+    if (is.null(type_names)) type_names <- head(col_names, length(col_types))
+    type_map <- stats::setNames(col_types, type_names)
+    for (field in intersect(names(type_map), names(tbl))) tbl[[field]] <- as(tbl[[field]], type_map[[field]])
   }
 
   return(tbl)

@@ -160,6 +160,9 @@ write_swat_inputs <- function(swat_inputs, file_updated, project_path) {
 #' @keywords internal
 #'
 write_tbl <- function(tbl, file_path, fmt) {
+  # Keep new trailing fields instead of recycling a legacy format vector.
+  if (length(fmt) < ncol(tbl)) fmt <- c(fmt, rep('%s', ncol(tbl) - length(fmt)))
+  fmt <- head(fmt, ncol(tbl))
   tbl <- map2_df(tbl, fmt, ~ sprintf(.y, .x))
 
   fmt_names <- fmt %>%

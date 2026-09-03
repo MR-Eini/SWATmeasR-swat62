@@ -218,9 +218,7 @@ measr_project <- R6Class(
     #' Save the SWATmeasR project in the SWAT+ project folder.
     #'
     save = function(){
-      obj_save <- get(x = self$.data$meta$project_name,
-                      envir = sys.frame(-1))
-      saveRDS(object = obj_save,
+      saveRDS(object = self,
               file = paste0(self$.data$meta$project_path, '/',
                             self$.data$meta$project_name, '.measr'))
     },
